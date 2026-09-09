@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>主項變換練習 (Change of Subject Practice)</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Roboto+Serif:italic,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100vh;
+            overflow: hidden; display: flex; flex-direction: column;
+            font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9;
+        }
+        #root { flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; height: 100%; }
+        .math-font { font-family: 'Roboto Serif', serif; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const Icons = {
+            CheckCircle2: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>,
+            XCircle: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>,
+            RefreshCw: ({ size = 16 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>,
+            Trophy: ({ size = 16, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>,
+            Lock: ({ size = 14 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+            Eye: ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>,
+            X: ({ size = 24 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+            User: ({ size = 12 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+            ShieldCheck: ({ size = 14 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+        };
+
+        const MathRenderer = ({ latex, className = "" }) => {
+            const cleanLatex = latex.replace(/\\\(|\\\)/g, '').trim();
+            const renderContent = (text) => {
+                const italicizeVars = (str) => {
+                    return str.split(/([a-z])/).map((part, i) =>
+                        /[a-z]/.test(part) ? <i key={i} className="math-font italic">{part}</i> : part
+                    );
+                };
+                const handlePowers = (str) => {
+                    const parts = str.split(/\^2|²/);
+                    if (parts.length === 1) return italicizeVars(str);
+                    return (
+                        <span>
+                            {italicizeVars(parts[0])}
+                            <sup className="text-xs ml-0.5">2</sup>
+                            {parts.length > 1 && handlePowers(parts.slice(1).join(''))}
+                        </span>
+                    );
+                };
+                const fracMatch = text.match(/\\frac\{([^}]*)\}\{([^}]*)\}/);
+                if (fracMatch) {
+                    const [full, num, den] = fracMatch;
+                    const parts = text.split(full);
+                    const before = parts[0];
+                    const after = parts.slice(1).join(full);
+                    return (
+                        <span className="inline-flex items-center align-middle">
+                            {before && handlePowers(before)}
+                            <div className="inline-flex flex-col items-center justify-center mx-1 leading-none">
+                                <div className="px-1 text-center whitespace-nowrap border-b-2 border-slate-800 pb-0.5">{handlePowers(num)}</div>
+                                <div className="px-1 text-center whitespace-nowrap pt-0.5">{handlePowers(den)}</div>
+                            </div>
+                            {after && renderContent(after)}
+                        </span>
+                    );
+                }
+                return handlePowers(text);
+            };
+            return <div className={`math-font text-lg md:text-xl ${className}`}>{renderContent(cleanLatex)}</div>;
+        };
+
+        const App = () => {
+            const [level, setLevel] = useState(1);
+            const [scores, setScores] = useState({ 1: 0, 2: 0, 3: 0, 4: 0 });
+            const [questions, setQuestions] = useState([]);
+            const [userAnswers, setUserAnswers] = useState({});
+            const [results, setResults] = useState({});
+            const [activeInput, setActiveInput] = useState(null);
+            const [showSteps, setShowSteps] = useState(null);
+            const [studentInfo, setStudentInfo] = useState({ name: '', studentClass: '', studentId: '', date: new Date().toISOString().split('T')[0] });
+            const [isPermanentlyLocked, setIsPermanentlyLocked] = useState(false);
+
+            const fmtNum = (n) => (n > 0 ? `+${n}` : n === 0 ? "" : `${n}`);
+
+            const evaluateExpression = (expr, testValues) => {
+                if (!expr || expr.trim() === "") return NaN;
+                try {
+                    let s = expr.toLowerCase().replace(/²/g, '**2').replace(/\^2/g, '**2');
+                    s = s.replace(/(\d)([a-z\(])/g, '$1*$2').replace(/([a-z\)])(\d)/g, '$1*$2').replace(/([a-z])([a-z\(])/g, '$1*$2').replace(/(\))([a-z\(])/g, '$1*$2');
+                    Object.keys(testValues).forEach(v => {
+                        const reg = new RegExp(`\\b${v}\\b`, 'g');
+                        s = s.replace(reg, `(${testValues[v]})`);
+                    });
+                    return new Function(`return ${s}`)();
+                } catch (e) { return NaN; }
+            };
+
+            const checkEquivalence = (uNum, uDen, cNum, cDen) => {
+                const testSets = [
+                    { r: 3.13, s: 5.15, h: 2.71, k: 4.14, x: 1.61, y: 8.02, z: 0.55 },
+                    { r: 7.22, s: 1.09, h: 5.55, k: 2.33, x: 9.12, y: 3.44, z: 6.78 }
+                ];
+                return testSets.every(vals => {
+                    const userVal = evaluateExpression(uNum, vals) / evaluateExpression(uDen, vals);
+                    const correctVal = evaluateExpression(cNum, vals) / evaluateExpression(cDen, vals);
+                    if (isNaN(userVal) || isNaN(correctVal)) return false;
+                    return Math.abs(userVal - correctVal) < 1e-7;
+                });
+            };
+
+            const generateQuestions = (currentLevel) => {
+                const newQuestions = [];
+                const randSign = () => Math.random() < 0.5 ? 1 : -1;
+                for (let i = 0; i < 3; i++) {
+                    let q = { id: i, level: currentLevel };
+                    const a = Math.floor(Math.random() * 7) + 2, b = Math.floor(Math.random() * 7) + 2, c = Math.floor(Math.random() * 8) + 1, d = Math.floor(Math.random() * 5) + 1;
+                    if (currentLevel === 1) {
+                        const a1 = a, b1 = b * randSign(), c1 = a + 2, d1 = c * randSign();
+                        q.subject = 'r'; q.display = `\\( ${a1}(r ${fmtNum(b1)}s) = ${c1}r ${fmtNum(d1)} \\)`;
+                        q.checkNum = `${d1}${fmtNum(-a1 * b1)}s`; q.checkDen = `${a1 - c1}`;
+                        q.steps = [`\\( ${a1}(r ${fmtNum(b1)}s) = ${c1}r ${fmtNum(d1)} \\)`, `\\( ${a1}r ${fmtNum(a1 * b1)}s = ${c1}r ${fmtNum(d1)} \\)`, `\\( ${a1}r - ${c1}r = ${d1} ${fmtNum(-a1 * b1)}s \\)`, `\\( (${a1 - c1})r = ${d1} ${fmtNum(-a1 * b1)}s \\)`, `\\( r = \\frac{${d1} ${fmtNum(-a1 * b1)}s}{${a1 - c1}} \\)`];
+                    } else if (currentLevel === 2) {
+                        const b2 = b * randSign();
+                        q.subject = 'x'; q.display = `\\( \\frac{${a} ${fmtNum(b2)}x}{y} = ${c} \\)`;
+                        q.checkNum = `${c}y ${fmtNum(-a)}`; q.checkDen = `${b2}`;
+                        q.steps = [`\\( \\frac{${a} ${fmtNum(b2)}x}{y} = ${c} \\)`, `\\( ${a} ${fmtNum(b2)}x = ${c}y \\)`, `\\( ${b2}x = ${c}y ${fmtNum(-a)} \\)`, `\\( x = \\frac{${c}y ${fmtNum(-a)}}{${b2}} \\)`];
+                    } else if (currentLevel === 3) {
+                        const b3 = b * randSign(), kSign = randSign(), kSignStr = kSign === 1 ? '+' : '-', k2Str = kSign === 1 ? 'k^2' : '-k^2', plusK2Str = kSign === 1 ? '+ k^2' : '- k^2';
+                        q.subject = 'h'; q.display = `\\( \\frac{${a}}{h ${kSignStr} k} = \\frac{k}{h ${fmtNum(b3)}} \\)`;
+                        q.checkNum = `${k2Str} ${fmtNum(-a * b3)}`; q.checkDen = `${a} - k`;
+                        q.steps = [`\\( \\frac{${a}}{h ${kSignStr} k} = \\frac{k}{h ${fmtNum(b3)}} \\)`, `\\( ${a}(h ${fmtNum(b3)}) = k(h ${kSignStr} k) \\)`, `\\( ${a}h ${fmtNum(a * b3)} = kh ${plusK2Str} \\)`, `\\( ${a}h - kh = ${k2Str} ${fmtNum(-a * b3)} \\)`, `\\( h(${a} - k) = ${k2Str} ${fmtNum(-a * b3)} \\)`, `\\( h = \\frac{${k2Str} ${fmtNum(-a * b3)}}{${a} - k} \\)`];
+                    } else {
+                        const op = randSign() === 1 ? '+' : '-'; q.subject = 'k';
+                        if (op === '+') {
+                            q.display = `\\( \\frac{${a}}{h} + \\frac{${b}}{k} = ${c} \\)`; q.checkNum = `${b}h`; q.checkDen = `${c}h - ${a}`;
+                            q.steps = [`\\( \\frac{${a}}{h} + \\frac{${b}}{k} = ${c} \\)`, `\\( \\frac{${b}}{k} = ${c} - \\frac{${a}}{h} \\)`, `\\( \\frac{${b}}{k} = \\frac{${c}h - ${a}}{h} \\)`, `\\( \\frac{k}{${b}} = \\frac{h}{${c}h - ${a}} \\)`, `\\( k = \\frac{${b}h}{${c}h - ${a}} \\)`];
+                        } else {
+                            q.display = `\\( \\frac{${a}}{h} - \\frac{${b}}{k} = ${c} \\)`; q.checkNum = `${b}h`; q.checkDen = `${a} ${fmtNum(-c)}h`;
+                            q.steps = [`\\( \\frac{${a}}{h} - \\frac{${b}}{k} = ${c} \\)`, `\\( \\frac{${b}}{k} = \\frac{${a}}{h} - ${c} \\)`, `\\( \\frac{${b}}{k} = \\frac{${a} - ${c}h}{h} \\)`, `\\( \\frac{k}{${b}} = \\frac{h}{${a} - ${c}h} \\)`, `\\( k = \\frac{${b}h}{${a} - ${c}h} \\)`];
+                        }
+                    }
+                    newQuestions.push(q);
+                }
+                setQuestions(newQuestions); setUserAnswers({}); setResults({}); setActiveInput(null); setShowSteps(null);
+            };
+
+            useEffect(() => { generateQuestions(level); }, [level]);
+            const handleKeyClick = (val) => {
+                if (!activeInput || results[activeInput.qId] === 'correct') return;
+                const { qId, field } = activeInput; const currentVal = userAnswers[qId]?.[field] || '';
+                setUserAnswers({ ...userAnswers, [qId]: { ...(userAnswers[qId] || {}), [field]: currentVal + val } });
+            };
+            const handleBackspace = () => {
+                if (!activeInput || results[activeInput.qId] === 'correct') return;
+                const { qId, field } = activeInput; const currentVal = userAnswers[qId]?.[field] || '';
+                setUserAnswers({ ...userAnswers, [qId]: { ...(userAnswers[qId] || {}), [field]: currentVal.slice(0, -1) } });
+            };
+            const handleCheck = (id) => {
+                if (results[id] === 'correct') return;
+                const ans = userAnswers[id] || { num: '', den: '' }, q = questions[id], isCorrect = checkEquivalence(ans.num, ans.den, q.checkNum, q.checkDen);
+                setResults(prev => ({ ...prev, [id]: isCorrect ? 'correct' : 'wrong' }));
+                setScores(prev => ({ ...prev, [level]: prev[level] + (isCorrect ? 2 : -2) }));
+            };
+            const handlePermanentLock = () => { if (!studentInfo.name.trim()) { alert("請輸入姓名！ Please enter Name!"); return; } setIsPermanentlyLocked(true); };
+            const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '+', 'h', 'k', 'r', 's', 'x', 'y', 'z', '²'];
+            const totalScore = useMemo(() => Object.values(scores).reduce((a, b) => a + b, 0), [scores]);
+
+            return (
+                <div className="flex flex-col flex-1 w-full h-full relative text-slate-800">
+                    {showSteps !== null && (
+                        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+                                <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
+                                    <h3 className="font-bold flex items-center gap-2"><Icons.Eye size={20}/> 解題步驟 Step-by-Step</h3>
+                                    <button onClick={() => setShowSteps(null)} className="hover:bg-blue-700 p-1 rounded-full transition"><Icons.X size={24}/></button>
+                                </div>
+                                <div className="p-8 overflow-y-auto space-y-6 flex flex-col items-center hide-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
+                                    {questions[showSteps]?.steps.map((step, idx) => (
+                                        <div key={idx} className="flex flex-col items-center w-full">
+                                            <MathRenderer latex={step} className="text-slate-800" />
+                                            {idx < questions[showSteps].steps.length - 1 && <div className="text-blue-400 my-2 text-xl">↓</div>}
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="p-4 bg-slate-50 border-t text-center"><button onClick={() => setShowSteps(null)} className="bg-slate-800 text-white px-10 py-2 rounded-xl font-bold hover:bg-slate-700 transition">關閉 Close</button></div>
+                            </div>
+                        </div>
+                    )}
+                    <div className="shrink-0 px-2 pt-2 md:px-4 md:pt-4">
+                        <div className="bg-white rounded-xl shadow-sm p-3 mb-3 border border-slate-200">
+                            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                                <div className="flex w-full lg:w-auto items-end gap-2 flex-1">
+                                    <div className="flex-[4] min-w-[80px]">
+                                        <label className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase mb-1"><Icons.User size={12}/> 姓名 Name</label>
+                                        <input type="text" disabled={isPermanentlyLocked} value={studentInfo.name} onChange={(e) => setStudentInfo({...studentInfo, name: e.target.value})} className={`w-full border-b-2 py-1 outline-none text-sm transition-colors ${isPermanentlyLocked ? 'border-transparent bg-slate-50 text-slate-700 font-bold px-1' : 'border-slate-100 focus:border-blue-400'}`} placeholder="Name"/>
+                                    </div>
+                                    <div className="flex-[3] min-w-[60px]">
+                                        <label className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase mb-1">班別 Class</label>
+                                        <input type="text" disabled={isPermanentlyLocked} value={studentInfo.studentClass} onChange={(e) => setStudentInfo({...studentInfo, studentClass: e.target.value})} className={`w-full border-b-2 py-1 outline-none text-sm transition-colors ${isPermanentlyLocked ? 'border-transparent bg-slate-50 text-slate-700 font-bold px-1' : 'border-slate-100 focus:border-blue-400'}`} placeholder="Class"/>
+                                    </div>
+                                    <div className="flex-[3] min-w-[60px]">
+                                        <label className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase mb-1">學號 No.</label>
+                                        <input type="text" disabled={isPermanentlyLocked} value={studentInfo.studentId} onChange={(e) => setStudentInfo({...studentInfo, studentId: e.target.value})} className={`w-full border-b-2 py-1 outline-none text-sm transition-colors ${isPermanentlyLocked ? 'border-transparent bg-slate-50 text-slate-700 font-bold px-1' : 'border-slate-100 focus:border-blue-400'}`} placeholder="No."/>
+                                    </div>
+                                    <div className="ml-1">
+                                        {!isPermanentlyLocked ? <button onClick={handlePermanentLock} className="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold text-xs hover:bg-blue-700 transition shadow-md whitespace-nowrap"><Icons.Lock size={14} className="inline mr-1"/> 鎖定</button> : <div className="px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg font-bold text-xs border border-emerald-200 whitespace-nowrap"><Icons.ShieldCheck size={14} className="inline mr-1"/> 已鎖定</div>}
+                                    </div>
+                                </div>
+                                <div className="h-px w-full lg:h-10 lg:w-px bg-slate-100"></div>
+                                <div className="flex w-full lg:w-auto items-center justify-between lg:justify-end gap-3">
+                                    <div className="flex flex-col items-center px-1"><label className="text-[10px] font-bold text-slate-400 uppercase">等級得分 Lv</label><div className={`font-black text-xl leading-none ${scores[level] < 0 ? 'text-red-500' : 'text-blue-600'}`}>{scores[level]}</div></div>
+                                    <div className="flex flex-col items-center px-2 border-l-2 border-slate-100"><label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1"><Icons.Trophy size={10} className="text-yellow-500"/> 總分 Total</label><div className={`font-black text-xl leading-none ${totalScore < 0 ? 'text-red-500' : 'text-slate-800'}`}>{totalScore}</div></div>
+                                    <div className="flex gap-1 bg-slate-100 p-1 rounded-lg ml-auto lg:ml-0">
+                                        {[1, 2, 3, 4].map(lvl => <button key={lvl} onClick={() => setLevel(lvl)} className={`px-2 md:px-3 py-1.5 rounded-md font-bold text-xs transition ${level === lvl ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-white'}`}>Lv {lvl}</button>)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex-1 overflow-y-auto hide-scrollbar px-2 md:px-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pb-2">
+                            {questions.map((q) => (
+                                <div key={q.id} className={`bg-white rounded-xl p-4 shadow-sm border-2 flex flex-col justify-between transition-all ${activeInput?.qId === q.id ? 'border-blue-400 ring-2 ring-blue-50' : 'border-transparent'}`}>
+                                    <div className="text-[10px] font-black text-slate-400 flex justify-between uppercase"><span>題目 Q{q.id + 1}</span><span>主項 Subj: <span className="text-blue-600 italic">{q.subject}</span></span></div>
+                                    <div className="flex-1 flex items-center justify-center my-4 bg-slate-50 rounded-lg border border-slate-100 p-4 min-h-[100px]"><MathRenderer latex={q.display} /></div>
+                                    <div className="flex items-center justify-center gap-2 mb-4">
+                                        <span className="text-lg math-font italic font-bold text-slate-400">{q.subject}=</span>
+                                        <div className="flex flex-col items-center gap-1">
+                                            <input readOnly onFocus={() => setActiveInput({ qId: q.id, field: 'num' })} className={`w-28 h-10 border-2 rounded-lg text-center font-bold text-sm outline-none cursor-pointer transition-colors ${results[q.id] === 'correct' ? 'bg-green-50 border-green-200' : activeInput?.qId === q.id && activeInput?.field === 'num' ? 'border-blue-500 bg-blue-50' : 'border-slate-100'}`} value={userAnswers[q.id]?.num || ''}/>
+                                            <div className="w-full h-0.5 bg-slate-800 rounded-full"></div>
+                                            <input readOnly onFocus={() => setActiveInput({ qId: q.id, field: 'den' })} className={`w-28 h-10 border-2 rounded-lg text-center font-bold text-sm outline-none cursor-pointer transition-colors ${results[q.id] === 'correct' ? 'bg-green-50 border-green-200' : activeInput?.qId === q.id && activeInput?.field === 'den' ? 'border-blue-500 bg-blue-50' : 'border-slate-100'}`} value={userAnswers[q.id]?.den || ''}/>
+                                        </div>
+                                        <div className="w-6 shrink-0">{results[q.id] === 'correct' && <Icons.CheckCircle2 />}{results[q.id] === 'wrong' && <Icons.XCircle />}</div>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <button onClick={() => handleCheck(q.id)} disabled={results[q.id] === 'correct'} className={`w-full py-2 rounded-lg font-bold text-xs transition ${results[q.id] === 'correct' ? 'bg-green-100 text-green-700 cursor-default' : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white'}`}>{results[q.id] === 'correct' ? '答對了 Correct!' : results[q.id] === 'wrong' ? '再試一次 (-2)' : '檢查答案 Check'}</button>
+                                        {results[q.id] !== undefined && <button onClick={() => setShowSteps(q.id)} className="w-full py-1.5 rounded-lg font-bold text-[10px] bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 flex items-center justify-center gap-1"><Icons.Eye size={12}/> 顯示步驟 Show Steps</button>}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="shrink-0 px-2 pt-2 md:px-4 md:pt-2 bg-slate-100" style={{ paddingBottom: '50px' }}>
+                        <div className="bg-white rounded-xl p-3 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] border border-slate-200">
+                            <div className="flex flex-col gap-2">
+                                <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                                    {keys.map(key => <button key={key} onClick={() => handleKeyClick(key)} className="h-10 flex items-center justify-center bg-slate-50 hover:bg-blue-500 hover:text-white rounded-lg font-bold text-base transition active:scale-95 border border-slate-100">{key}</button>)}
+                                    <button onClick={handleBackspace} className="col-span-2 h-10 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-lg font-bold text-xs uppercase">刪除 Delete</button>
+                                    <button onClick={() => generateQuestions(level)} className="col-span-3 sm:col-span-8 h-10 flex items-center justify-center rounded-lg font-bold transition gap-2 text-xs bg-emerald-500 text-white hover:bg-emerald-600 shadow-md active:scale-95"><Icons.RefreshCw size={16} /> 重新生成 Generate</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
